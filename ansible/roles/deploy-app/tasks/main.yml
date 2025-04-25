@@ -1,0 +1,79 @@
+---
+- name: Create application directory
+  file:
+    path: "/opt/{{ app_name }}"
+    state: directory
+    mode: '0755'
+  become: yes
+
+- name: Copy docker-compose.yml
+  template:
+    src: docker-compose.yml.j2
+    dest: "/opt/{{ app_name }}/docker-compose.yml"
+    mode: '0644'
+  become: yes
+
+- name: Copy environment file
+  template:
+    src: env.j2
+    dest: "/opt/{{ app_name }}/.env"
+    mode: '0600'
+  become: yes
+
+- name: Create monitoring directories
+  file:
+    path: "/opt/{{ app_name }}/{{ item }}"
+    state: directory
+    mode: '0755'
+  with_items:
+    - prometheus
+    - grafana
+    - grafana/provisioning
+    - grafana/provisioning/datasources
+    - grafana/provisioning/dashboards
+  become: yes
+
+- name: Copy Prometheus config
+  template:
+    src: prometheus.yml.j2
+    dest: "/opt/{{ app_name }}/prometheus/prometheus.yml"
+    mode: '0644'
+  become: yes
+
+- name: Copy Grafana dashboard provisioning
+  template:
+    src: dashboards.yml.j2
+    dest: "/opt/{{ app_name }}/grafana/provisioning/dashboards/dashboards.yml"
+    mode: '0644'
+  become: yes
+
+- name: Copy Grafana datasource provisioning
+  template:
+    src: datasources.yml.j2
+    dest: "/opt/{{ app_name }}/grafana/provisioning/datasources/datasources.yml"
+    mode: '0644'
+  become: yes
+
+- name: Copy Node Exporter dashboard
+  template:
+    src: node-exporter-dashboard.json.j2
+    dest: "/opt/{{ app_name }}/grafana/provisioning/dashboards/node-exporter-dashboard.json"
+    mode: '0644'
+  become: yes
+
+- name: Pull Docker images
+  docker_compose:
+    project_src: "/opt/{{ app_name }}"
+    pull: yes
+  become: yes
+
+- name: Deploy application with Docker Compose
+  docker_compose:
+    project_src: "/opt/{{ app_name }}"
+    state: present
+    recreate: always
+  become: yes
+
+- name: Prune unused Docker images
+  shell: docker image prune -af
+  become: yes 

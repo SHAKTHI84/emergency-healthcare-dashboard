@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: emergency-healthcare
+spec:
+  tls:
+    - hosts:
+        - emergency-healthcare.example.com
+        - www.emergency-healthcare.example.com
+      secretName: emergency-healthcare-tls
+  rules:
+    - host: emergency-healthcare.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: emergency-healthcare
+                port:
+                  name: http
+    - host: www.emergency-healthcare.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: emergency-healthcare
+                port:
+                  name: http 

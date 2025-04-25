@@ -75,7 +75,9 @@ export default function PersonalDetailsForm({ userId, onUpdate }: PersonalDetail
     if (userId) {
       loadPatient();
     } else {
-      console.error("No userId provided to PersonalDetailsForm");
+      // For new patients, just clear the error and don't show "User ID not provided"
+      setError(null);
+      console.log("New patient - no userId provided to PersonalDetailsForm");
       setLoading(false);
     }
   }, [userId]);
@@ -129,21 +131,20 @@ export default function PersonalDetailsForm({ userId, onUpdate }: PersonalDetail
     setError(null);
 
     try {
-      // Use the provided userId instead of getting it from session
-      if (!userId) {
-        setError('User ID not provided');
-        setSaving(false);
-        return;
+      // Check for user ID, but don't show error for new patients
+      if (!userId && !(patient && patient.patient_id)) {
+        console.log('No user ID or patient ID available');
+        // Don't set error here - we'll create a new patient
       }
 
       // Filter out empty allergy entries
       const filteredAllergies = formData.allergies.filter(allergy => allergy.trim() !== '');
 
       // Start with an existing patient if we have one
-      const existingPatient = patient || {};
+      const existingPatient = patient || {} as Partial<PatientData>;
       
       const patientData: Partial<PatientData> = {
-        ...existingPatient, // Include existing data to preserve it
+        ...(existingPatient as PatientData), // Include existing data to preserve it
         name: formData.name,
         email: formData.email,
         phone: formData.phone,
@@ -153,26 +154,36 @@ export default function PersonalDetailsForm({ userId, onUpdate }: PersonalDetail
 
       console.log("Saving patient data:", patientData);
       
-      // We're directly using the userId parameter 
-      const updatedPatient = await updatePatient(userId, patientData);
+      // We're directly using the userId parameter or fallback to existingPatient.id
+      const idToUse = userId || (existingPatient.id ? existingPatient.id : '');
+      const updatedPatient = await updatePatient(idToUse, patientData);
       console.log("Update result:", updatedPatient);
       
       if (updatedPatient) {
-        setPatient(updatedPatient as PatientData);
-        setFormData({
-          name: updatedPatient.name || '',
-          email: updatedPatient.email || '',
-          phone: updatedPatient.phone || '',
-          bloodType: updatedPatient.bloodType || '',
-          allergies: updatedPatient.allergies && updatedPatient.allergies.length > 0 
-            ? [...updatedPatient.allergies] 
-            : [''],
-        });
-        
-        setSuccess('Personal details updated successfully!');
-        
-        if (onUpdate) {
-          onUpdate(updatedPatient as PatientData);
+        // Check if the result is a PatientData object
+        if ('id' in updatedPatient) {
+          // It's a PatientData object
+          setPatient(updatedPatient);
+          setFormData({
+            name: updatedPatient.name || '',
+            email: updatedPatient.email || '',
+            phone: updatedPatient.phone || '',
+            bloodType: updatedPatient.bloodType || '',
+            allergies: updatedPatient.allergies && updatedPatient.allergies.length > 0 
+              ? [...updatedPatient.allergies] 
+              : [''],
+          });
+          
+          setSuccess('Personal details updated successfully!');
+          
+          if (onUpdate) {
+            onUpdate(updatedPatient);
+          }
+        } else if ('success' in updatedPatient && updatedPatient.success) {
+          // It's a success response but not a PatientData object
+          setSuccess('Personal details updated successfully!');
+        } else {
+          setError('Unexpected response format from server');
         }
         
         // Hide success message after 3 seconds

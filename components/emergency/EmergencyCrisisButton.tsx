@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import LoadingSpinner from '../ui/LoadingSpinner';
+import { supabase } from '../../lib/supabaseClient';
 
 interface EmergencyCrisisButtonProps {
   floating?: boolean;
@@ -14,10 +15,56 @@ interface EmergencyCrisisButtonProps {
 export default function EmergencyCrisisButton({
   floating = true,
   className = '',
-  buttonText = 'EMERGENCY CRISIS'
+  buttonText = 'INSTANT EMERGENCY SOS'
 }: EmergencyCrisisButtonProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showButton, setShowButton] = useState(false);
+  
+  // Check for data-dashboard-type to prevent rendering on healthcare pages
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        // First check if we're on a healthcare dashboard by looking at the body attribute
+        if (typeof document !== 'undefined') {
+          const dashboardType = document.body.getAttribute('data-dashboard-type');
+          if (dashboardType === 'healthcare') {
+            // Never show on healthcare dashboard
+            setShowButton(false);
+            return;
+          }
+        }
+        
+        // Check user role from session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          // If no logged in user, don't show the button
+          setShowButton(false);
+          return;
+        }
+        
+        // Get user role from session metadata or localStorage
+        const userRole = session.user.user_metadata?.role || localStorage.getItem('user_role');
+        
+        // Only show crisis button for patients, never for healthcare providers
+        const isPatient = userRole === 'patient' || userRole === 'Patient';
+        
+        setShowButton(isPatient);
+      } catch (error) {
+        console.error('Error checking user role:', error);
+        // On error, default to not showing the button
+        setShowButton(false);
+      }
+    };
+    
+    checkUserRole();
+  }, []);
+
+  // If not patient or still checking, don't render anything
+  if (!showButton) {
+    return null;
+  }
 
   // Handle emergency crisis button click
   const handleCrisisClick = async () => {
@@ -91,12 +138,12 @@ export default function EmergencyCrisisButton({
     }
   };
 
-  // If not floating, return a regular button
+  // If not floating, return a regular button with the global CSS class
   if (!floating) {
     return (
       <button
         onClick={handleCrisisClick}
-        className={`flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-md shadow-md transition-all ${className}`}
+        className={`flex items-center justify-center gap-2 bg-red-600 text-white font-bold py-2 px-6 rounded-md shadow-md transition-all ambulance-blink ${className}`}
         disabled={isSubmitting}
       >
         {isSubmitting ? (
@@ -122,10 +169,10 @@ export default function EmergencyCrisisButton({
 
   // Floating button (default)
   return (
-    <div className="fixed top-28 left-0 right-0 z-50 flex justify-center p-2">
+    <div className="fixed top-48 left-0 right-0 z-50 flex justify-center p-2">
       <button
         onClick={handleCrisisClick}
-        className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all transform hover:scale-105 animate-pulse text-lg"
+        className="flex items-center justify-center gap-2 bg-red-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all transform hover:scale-105 text-lg ambulance-blink"
         disabled={isSubmitting}
       >
         {isSubmitting ? (

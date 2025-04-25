@@ -1,0 +1,23 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+bases:
+  - ../../base
+
+namespace: emergency-healthcare-prod
+
+patchesStrategicMerge:
+  - deployment-patch.yaml
+  - ingress-patch.yaml
+
+resources:
+  - namespace.yaml
+
+replicas:
+  - name: emergency-healthcare
+    count: 3
+
+images:
+  - name: emergency-healthcare
+    newName: registry.example.com/emergency-healthcare
+    newTag: latest 

@@ -128,8 +128,8 @@ export default function PatientDashboard() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Patient Dashboard</h1>
-            <p className="text-gray-600">
+            <h1 className="text-3xl font-bold text-black text-black-important">Patient Dashboard</h1>
+            <p className="text-gray-700 text-black-important font-medium">
               Welcome back, {patientData?.name || user.email}
             </p>
           </div>
@@ -146,16 +146,16 @@ export default function PatientDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Quick Actions Card */}
-          <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="card bg-white shadow-lg">
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+              <h2 className="text-xl font-semibold text-black text-black-important mb-4">Quick Actions</h2>
               
               {/* Emergency Crisis Button (non-floating version) */}
               <div className="mb-4">
                 <EmergencyCrisisButton 
                   floating={false} 
                   className="w-full py-3 text-base"
-                  buttonText="EMERGENCY CRISIS"
+                  buttonText="INSTANT EMERGENCY SOS"
                 />
               </div>
               
@@ -163,43 +163,43 @@ export default function PatientDashboard() {
                 onClick={() => router.push('/report-emergency')}
                 className="mb-3 w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
               >
-                Report Emergency
+                <span className="text-white">Report Emergency</span>
               </button>
               <button
                 onClick={() => router.push('/hospitals')}
                 className="mb-3 w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                Find Nearby Hospitals
+                <span className="text-white">Find Nearby Hospitals</span>
               </button>
               <button
                 onClick={() => router.push('/emergency-contacts')}
                 className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
               >
-                Emergency Contacts
+                <span className="text-white">Emergency Contacts</span>
               </button>
             </div>
           </div>
 
           {/* Medical Summary Card */}
-          <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="card bg-white shadow-lg">
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Medical Summary</h2>
+              <h2 className="text-xl font-semibold text-black text-black-important mb-4">Medical Summary</h2>
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Blood Type</h3>
-                  <p className="mt-1 text-lg text-gray-900">{patientData?.blood_type || 'Not specified'}</p>
+                  <h3 className="text-sm font-medium text-gray-800 text-black-important">Blood Type</h3>
+                  <p className="mt-1 text-lg text-gray-900 text-black-important font-medium">{patientData?.blood_type || 'Not specified'}</p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Allergies</h3>
-                  <p className="mt-1 text-lg text-gray-900">
+                  <h3 className="text-sm font-medium text-gray-800 text-black-important">Allergies</h3>
+                  <p className="mt-1 text-lg text-gray-900 text-black-important font-medium">
                     {patientData?.allergies?.length > 0
                       ? patientData.allergies.join(', ')
                       : 'None recorded'}
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500">Last Check-up</h3>
-                  <p className="mt-1 text-lg text-gray-900">
+                  <h3 className="text-sm font-medium text-gray-800 text-black-important">Last Check-up</h3>
+                  <p className="mt-1 text-lg text-gray-900 text-black-important font-medium">
                     {patientData?.last_checkup
                       ? new Date(patientData.last_checkup).toLocaleDateString()
                       : 'No date available'}
@@ -209,7 +209,7 @@ export default function PatientDashboard() {
               <div className="mt-6">
                 <Link
                   href="/dashboard/patient/profile?tab=medical"
-                  className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                  className="text-sm font-bold text-blue-800 hover:text-blue-900"
                 >
                   View full medical history →
                 </Link>
@@ -218,25 +218,25 @@ export default function PatientDashboard() {
           </div>
 
           {/* Recent Activity Card */}
-          <div className="bg-white overflow-hidden shadow-sm rounded-lg">
+          <div className="card bg-white shadow-lg">
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Activity</h2>
+              <h2 className="text-xl font-semibold text-black text-black-important mb-4">Recent Activity</h2>
               {patientData?.medical_history?.length > 0 ? (
                 <div className="space-y-3">
                   {patientData.medical_history.slice(0, 3).map((entry: any, index: number) => (
                     <div key={index} className="border-l-4 border-blue-500 pl-3 py-1">
-                      <p className="text-sm text-gray-600">{entry.date}</p>
-                      <p className="font-medium">{entry.diagnosis}</p>
+                      <p className="text-sm text-gray-800 text-black-important">{entry.date}</p>
+                      <p className="font-medium text-black-important">{entry.diagnosis}</p>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-600">No recent medical activity recorded</p>
+                <p className="text-gray-800 text-black-important font-medium">No recent medical activity recorded</p>
               )}
               <div className="mt-6">
                 <Link
                   href="/dashboard/patient/profile?tab=medical"
-                  className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                  className="text-sm font-bold text-blue-800 hover:text-blue-900"
                 >
                   View medical history →
                 </Link>
@@ -246,50 +246,43 @@ export default function PatientDashboard() {
         </div>
 
         {/* Health Metrics Card */}
-        <div className="mt-6 bg-white overflow-hidden shadow-sm rounded-lg">
+        <div className="mt-6 card bg-white shadow-lg">
           <div className="p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Health Metrics</h2>
+              <h2 className="text-xl font-semibold text-black text-black-important">Health Metrics</h2>
               <Link
                 href="/dashboard/patient/profile?tab=metrics"
-                className="text-sm font-medium text-blue-600 hover:text-blue-800"
+                className="text-sm font-bold text-blue-800 hover:text-blue-900"
               >
                 View metrics →
               </Link>
             </div>
-            
-            {!patientData?.health_metrics || 
-             (!patientData.health_metrics.bloodPressure && 
-              !patientData.health_metrics.heartRate && 
-              !patientData.health_metrics.bloodSugar && 
-              !patientData.health_metrics.oxygenLevel) ? (
-              <div className="text-center py-10">
-                <p className="text-gray-600">No health metrics recorded yet</p>
-                <Link
-                  href="/dashboard/patient/profile?tab=metrics"
-                  className="mt-2 inline-block text-sm font-medium text-blue-600 hover:text-blue-800"
-                >
-                  Add health metrics →
-                </Link>
+            {patientData?.health_metrics?.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {patientData.health_metrics.slice(0, 3).map((metric: any, index: number) => (
+                  <div key={index} className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="text-sm font-medium text-gray-500">{metric.name}</h3>
+                    <p className="mt-1 text-xl font-semibold text-black-important">
+                      {metric.value} <span className="text-sm text-gray-700 text-black-important">{metric.unit}</span>
+                    </p>
+                    <p className="text-xs text-gray-700 text-black-important mt-1">
+                      Last updated: {metric.date}
+                    </p>
+                  </div>
+                ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-blue-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-blue-800">Blood Pressure</h3>
-                  <p className="mt-1 text-2xl font-semibold text-blue-900">{patientData.health_metrics.bloodPressure || 'N/A'}</p>
-                </div>
-                <div className="bg-green-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-green-800">Heart Rate</h3>
-                  <p className="mt-1 text-2xl font-semibold text-green-900">{patientData.health_metrics.heartRate ? `${patientData.health_metrics.heartRate} bpm` : 'N/A'}</p>
-                </div>
-                <div className="bg-yellow-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-yellow-800">Blood Sugar</h3>
-                  <p className="mt-1 text-2xl font-semibold text-yellow-900">{patientData.health_metrics.bloodSugar ? `${patientData.health_metrics.bloodSugar} mg/dL` : 'N/A'}</p>
-                </div>
-                <div className="bg-purple-50 p-4 rounded-lg">
-                  <h3 className="text-sm font-medium text-purple-800">Oxygen Level</h3>
-                  <p className="mt-1 text-2xl font-semibold text-purple-900">{patientData.health_metrics.oxygenLevel ? `${patientData.health_metrics.oxygenLevel}%` : 'N/A'}</p>
-                </div>
+              <div className="text-center py-8">
+                <p className="text-gray-800 text-black-important font-medium mb-4">No health metrics recorded yet</p>
+                <Link
+                  href="/dashboard/patient/profile?tab=metrics&action=add"
+                  className="btn-primary inline-flex items-center px-4 py-2 rounded-md text-white"
+                >
+                  <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add health metrics →
+                </Link>
               </div>
             )}
           </div>

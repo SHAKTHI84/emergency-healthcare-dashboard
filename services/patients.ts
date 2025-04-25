@@ -27,16 +27,17 @@ export interface PatientData {
   lastCheckup: string;
   createdAt: string;
   updatedAt: string;
+  patient_id?: string;
 }
 
 // Helper function to ensure database is initialized
-async function ensureDatabaseInitialized() {
+async function ensureDatabaseInitialized(): Promise<{ success: boolean; error?: string }> {
   const result = await initializeDatabase();
   if (!result.success) {
     console.error('Failed to initialize database:', result.error);
-    return false;
+    return { success: false, error: result.error };
   }
-  return true;
+  return { success: true };
 }
 
 // Get a patient by email or phone - used for duplicate checking
@@ -95,7 +96,8 @@ function transformPatientData(data: any): PatientData {
     },
     lastCheckup: data.last_checkup || '',
     createdAt: data.created_at || '',
-    updatedAt: data.updated_at || ''
+    updatedAt: data.updated_at || '',
+    patient_id: data.patient_id || ''
   };
 }
 
@@ -103,7 +105,7 @@ export async function getPatients(): Promise<PatientData[]> {
   try {
     // Ensure database is initialized
     const dbInitialized = await ensureDatabaseInitialized();
-    if (!dbInitialized) {
+    if (!dbInitialized.success) {
       console.warn('Proceeding with getPatients despite database initialization failure.');
     }
     
@@ -130,7 +132,7 @@ export async function getPatientById(id: string): Promise<PatientData | null> {
   try {
     // Ensure database is initialized
     const dbInitialized = await ensureDatabaseInitialized();
-    if (!dbInitialized) {
+    if (!dbInitialized.success) {
       console.warn('Proceeding with getPatientById despite database initialization failure.');
     }
     
@@ -175,7 +177,7 @@ export async function createPatient(patient: Omit<PatientData, 'id' | 'createdAt
   try {
     // Ensure database is initialized
     const dbInitialized = await ensureDatabaseInitialized();
-    if (!dbInitialized) {
+    if (!dbInitialized.success) {
       console.warn('Proceeding with createPatient despite database initialization failure.');
     }
     
@@ -194,6 +196,14 @@ export async function createPatient(patient: Omit<PatientData, 'id' | 'createdAt
       }
     }
     
+    // Generate patient ID if not provided
+    let patientId = patient['patient_id']; // Access from patient object if it exists
+    
+    if (!patientId) {
+      // Generate a new patient ID
+      patientId = await generatePatientId();
+    }
+    
     // Prepare data for insertion
     const patientData = {
       name: patient.name,
@@ -208,6 +218,7 @@ export async function createPatient(patient: Omit<PatientData, 'id' | 'createdAt
         bloodSugar: 0,
         oxygenLevel: 0
       },
+      patient_id: patientId, // Add patient_id to the database record
       last_checkup: patient.lastCheckup || null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
@@ -231,6 +242,39 @@ export async function createPatient(patient: Omit<PatientData, 'id' | 'createdAt
   }
 }
 
+// Helper function to generate unique patient IDs
+export async function generatePatientId(): Promise<string> {
+  try {
+    // Get the latest patient ID from the database
+    const { data, error } = await supabase
+      .from('patients')
+      .select('patient_id')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    
+    // If no patients exist yet, start with 001
+    if (error || !data || data.length === 0) {
+      return 'PATIENT-001';
+    }
+    
+    // If we have existing patients, increment the highest ID
+    try {
+      // Extract the numeric part from the latest ID
+      const latestId = data[0].patient_id || 'PATIENT-000';
+      const numericPart = parseInt(latestId.split('-')[1], 10);
+      const newNumericPart = numericPart + 1;
+      // Format with leading zeros (e.g., 001, 042, 999)
+      return `PATIENT-${newNumericPart.toString().padStart(3, '0')}`;
+    } catch (error) {
+      console.error('Error generating patient ID:', error);
+      return 'PATIENT-001'; // Fallback
+    }
+  } catch (error) {
+    console.error('Error in generatePatientId:', error);
+    return 'PATIENT-ERROR';
+  }
+}
+
 export async function updatePatient(
   patientOrUserId: PatientData | string,
   patientUpdate?: Partial<PatientData>
@@ -238,7 +282,7 @@ export async function updatePatient(
   try {
     // Ensure database is initialized
     const dbInitialized = await ensureDatabaseInitialized();
-    if (!dbInitialized) {
+    if (!dbInitialized.success) {
       console.warn('Proceeding with updatePatient despite database initialization failure.');
     }
     

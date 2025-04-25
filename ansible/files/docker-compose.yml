@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  app:
+    image: nginx:alpine
+    volumes:
+      - ./index.html:/usr/share/nginx/html/index.html
+    ports:
+      - "3000:80"
+    networks:
+      - emergency-network
+    restart: always
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - emergency-network
+    restart: always
+
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - grafana-data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    networks:
+      - emergency-network
+    restart: always
+    depends_on:
+      - prometheus
+
+networks:
+  emergency-network:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data: 

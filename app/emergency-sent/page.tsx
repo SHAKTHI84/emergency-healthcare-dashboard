@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function EmergencyReportedPage() {
+function EmergencyReportedContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(15);
@@ -90,5 +90,20 @@ export default function EmergencyReportedPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function EmergencyReportedPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-md">
+          <h1 className="text-2xl font-bold mb-4">Loading...</h1>
+          <p>Please wait while we process your submission.</p>
+        </div>
+      </div>
+    }>
+      <EmergencyReportedContent />
+    </Suspense>
   );
 } 

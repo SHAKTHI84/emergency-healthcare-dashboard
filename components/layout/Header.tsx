@@ -2,21 +2,40 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { supabase } from '../../lib/supabaseClient';
 import { clearSessionData } from '../../utils/sessionStorage';
 
 const Header: React.FC = () => {
   const pathname = usePathname();
-  const router = useRouter();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [role, setRole] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  // First, ensure we only run client-side code after mount
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Check if user is logged in
   useEffect(() => {
+    if (!isClient) return;
+
     const checkAuth = async () => {
       try {
-        // Get current session
+        // Check localStorage first (faster)
+        const sessionStr = localStorage.getItem('session');
+        const userRoleStr = localStorage.getItem('user_role');
+        
+        if (sessionStr) {
+          console.log("Found session in localStorage");
+          setIsLoggedIn(true);
+          setRole(userRoleStr);
+          return;
+        }
+        
+        // Fallback to Supabase session check
+        console.log("Checking Supabase session");
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -29,14 +48,14 @@ const Header: React.FC = () => {
         setIsLoggedIn(!!session);
         
         if (session) {
-          // Try to get role from local storage first (faster)
-          const storedRole = localStorage.getItem('user_role');
-          if (storedRole) {
-            setRole(storedRole);
-          } else {
-            // Fallback to user metadata
-            setRole(session.user.user_metadata?.role || 'patient');
-          }
+          // Get role from user metadata
+          const userRole = session.user.user_metadata?.role || 'patient';
+          setRole(userRole);
+          
+          // Update localStorage as a backup
+          localStorage.setItem('session', JSON.stringify(session));
+          localStorage.setItem('user', JSON.stringify(session.user));
+          localStorage.setItem('user_role', userRole);
         } else {
           setRole(null);
         }
@@ -47,7 +66,7 @@ const Header: React.FC = () => {
     };
     
     checkAuth();
-  }, [pathname]);
+  }, [pathname, isClient]);
 
   const handleSignOut = async () => {
     try {
@@ -58,14 +77,14 @@ const Header: React.FC = () => {
       clearSessionData();
       
       // Redirect to login page
-      window.location.href = '/login';
+      window.location.href = '/';
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
 
   const getDashboardLink = () => {
-    console.log("Current user role:", role);
+    console.log("Getting dashboard link for role:", role);
     if (role === 'healthcare' || role === 'Healthcare Provider') {
       return '/dashboard/healthcare';
     }
@@ -75,6 +94,22 @@ const Header: React.FC = () => {
   // Determine active link for styling
   const isActiveLink = (path: string) => {
     return pathname === path ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700';
+  };
+
+  // Function to handle dashboard navigation with role checking
+  const handleDashboardClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // Get dashboardLink with role check
+    const dashboardUrl = getDashboardLink();
+    console.log("Dashboard clicked, navigating to:", dashboardUrl);
+    
+    // Create URL with loop prevention flag
+    const redirectUrl = new URL(dashboardUrl, window.location.origin);
+    redirectUrl.searchParams.set('prevent_redirect', 'true');
+    
+    // Use direct navigation
+    window.location.href = redirectUrl.toString();
   };
 
   return (
@@ -107,12 +142,13 @@ const Header: React.FC = () => {
                 Report Emergency
               </Link>
               {isLoggedIn && (
-                <Link
-                  href={getDashboardLink()}
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActiveLink('/dashboard') || isActiveLink('/dashboard/healthcare') || isActiveLink('/dashboard/patient') ? 'border-blue-500 text-gray-900' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'}`}
+                <a
+                  href="#"
+                  onClick={handleDashboardClick}
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium cursor-pointer border-blue-500 text-gray-900`}
                 >
                   Dashboard
-                </Link>
+                </a>
               )}
             </div>
           </div>

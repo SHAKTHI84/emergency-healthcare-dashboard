@@ -1,93 +1,131 @@
 # Emergency Healthcare Dashboard
 
-A comprehensive healthcare management system for handling emergency situations and patient information.
+A real-time emergency management system providing critical information during health emergencies.
 
-## Features
+## DevOps Setup Guide
 
-### Emergency Management
-- Report emergencies with detailed information
-- "Emergency CRISIS" button for urgent situations
-- View and manage emergency reports in real-time
-- Bulk selection and deletion of emergency reports
-- Filter and sort emergency reports
-- Status updates (pending, in progress, completed)
+This repository includes a complete DevOps pipeline setup for the Emergency Healthcare Dashboard application. The following tools are implemented:
 
-### Patient Management
-- Patient profiles with personal details
-- Medical history tracking
-- Health metrics monitoring
-- Secure patient data management
+### 1. Docker
 
-### Healthcare Provider Portal
-- Comprehensive dashboard for healthcare professionals
-- Patient details editing
-- Emergency response coordination
-- Medical history management
+The application is containerized using Docker, which enables consistency across different environments.
 
-## Getting Started
+To build and run the application with Docker:
 
-### Prerequisites
-- Node.js 16+
-- npm or yarn
-- A Supabase account with URL and API keys
+```bash
+# Build the Docker image
+docker build -t emergency-healthcare .
 
-### Installation
+# Run the container
+docker run -p 3000:3000 --env-file .env.local emergency-healthcare
+```
 
-1. Clone the repository
-2. Install dependencies:
+For local development with Docker Compose:
+
+```bash
+# Start the application with monitoring stack
+docker-compose up
+
+# Access the application at http://localhost:3000
+# Access Grafana at http://localhost:3001
+# Access Prometheus at http://localhost:9090
+```
+
+### 2. GitHub Actions (CI/CD Pipeline)
+
+A complete CI/CD pipeline is configured in `.github/workflows/ci-cd.yml`. This pipeline:
+
+- Builds and tests the application on every push or pull request to main/master
+- Builds and pushes a Docker image when changes are merged to main/master
+- Deploys the application to production when changes are merged to main/master
+
+Required secrets in GitHub:
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`
+- `DOCKERHUB_USERNAME`
+- `DOCKERHUB_TOKEN`
+- `DEPLOY_HOST`
+- `DEPLOY_USERNAME`
+- `DEPLOY_KEY`
+- `DEPLOY_PORT`
+
+### 3. Terraform (Infrastructure as Code)
+
+Terraform configurations for AWS infrastructure are provided in the `terraform` directory:
+
+```bash
+# Initialize Terraform
+cd terraform/environments/production
+terraform init
+
+# Plan the infrastructure changes
+terraform plan -var="container_image=username/emergency-healthcare:latest"
+
+# Apply the changes
+terraform apply -var="container_image=username/emergency-healthcare:latest"
+```
+
+### 4. Ansible (for Automated Deployment)
+
+Ansible playbooks for server setup and application deployment:
+
+```bash
+# Run the deployment playbook
+cd ansible
+ansible-playbook -i inventory/production.yml playbooks/deploy.yml
+
+# To deploy with custom variables
+ansible-playbook -i inventory/production.yml playbooks/deploy.yml \
+  -e "docker_image=username/emergency-healthcare:latest"
+```
+
+### 5. Kubernetes (for Container Orchestration)
+
+Kubernetes manifests for deploying the application with Kustomize:
+
+```bash
+# Deploy to production
+kubectl apply -k kubernetes/overlays/prod
+
+# View the deployments
+kubectl get deployments -n emergency-healthcare-prod
+
+# View the services
+kubectl get services -n emergency-healthcare-prod
+
+# View the ingresses
+kubectl get ingresses -n emergency-healthcare-prod
+```
+
+### 6. Monitoring (Prometheus/Grafana)
+
+The application includes monitoring with Prometheus and Grafana. The dashboards include:
+
+- Request rate
+- Response time
+- Memory usage
+- CPU usage
+
+To access the monitoring tools:
+- Prometheus: http://localhost:9090 (when running locally)
+- Grafana: http://localhost:3001 (when running locally)
+
+Default Grafana credentials:
+- Username: admin
+- Password: admin
+
+## Development
+
+To run the application locally for development:
+
 ```bash
 npm install
-```
-
-3. Set up environment variables:
-Create a `.env.local` file with the following variables:
-```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
-
-4. Initialize the database:
-```bash
-npm run init-db
-```
-
-5. Start the development server:
-```bash
 npm run dev
 ```
 
-## Database Setup
-
-The application uses Supabase for database operations. The database schema includes:
-
-### Tables
-- `patients`: Stores patient information including medical history and health metrics
-- `emergencies`: Stores emergency reports with location, type, and status
-
-### Database Initialization
-The database can be initialized in three ways:
-
-1. Automatically when the application starts (client-side)
-2. Using the `npm run init-db` command (server-side)
-3. Directly executing the SQL in `utils/database.sql`
-
-## Usage
-
-### Reporting Emergencies
-- Navigate to the emergency report page
-- Fill in details or use the CRISIS button for urgent situations
-- Your location will be automatically detected if permission is granted
-
-### Managing Emergencies (Healthcare Providers)
-- View all emergencies on the healthcare dashboard
-- Update status as situations progress
-- Select multiple emergencies with checkboxes for bulk deletion
-- Sort emergencies by creation time
-
-### Managing Patients (Healthcare Providers)
-- View and edit patient details
-- Update medical history
-- Track health metrics
+Visit http://localhost:3000 to see the application.
 
 ## License
+
 This project is licensed under the MIT License - see the LICENSE file for details.

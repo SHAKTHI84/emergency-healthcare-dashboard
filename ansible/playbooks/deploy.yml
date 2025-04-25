@@ -1,0 +1,106 @@
+---
+- name: Deploy Emergency Healthcare Dashboard
+  hosts: webservers
+  become: true
+  vars:
+    app_dir: /opt/emergency-healthcare
+    docker_compose_file: "{{ app_dir }}/docker-compose.yml"
+  
+  tasks:
+    - name: Ensure required packages are installed
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      loop:
+        - docker.io
+        - docker-compose
+        - git
+        - python3-pip
+      when: ansible_os_family == "Debian"
+    
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+      when: ansible_service_mgr == "systemd"
+    
+    - name: Create application directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: '0755'
+    
+    - name: Clone/Update application repository
+      git:
+        repo: https://github.com/yourusername/emergency-healthcare-dashboard.git
+        dest: "{{ app_dir }}"
+        version: main
+        update: yes
+      register: git_result
+      ignore_errors: yes
+    
+    - name: Copy Docker Compose file if git failed
+      copy:
+        src: files/docker-compose.yml
+        dest: "{{ docker_compose_file }}"
+        mode: '0644'
+      when: git_result is failed
+    
+    - name: Copy index.html file
+      copy:
+        src: files/index.html
+        dest: "{{ app_dir }}/index.html"
+        mode: '0644'
+    
+    - name: Deploy with Docker Compose
+      shell: docker-compose up -d
+      args:
+        chdir: "{{ app_dir }}"
+      register: compose_result
+    
+    - name: Show Docker Compose output
+      debug:
+        var: compose_result
+    
+    - name: Check if application is running
+      uri:
+        url: http://localhost:3000
+        method: GET
+        status_code: 200
+      register: app_status
+      ignore_errors: yes
+    
+    - name: Application status
+      debug:
+        msg: "Application is {{ 'running' if app_status.status == 200 else 'not running' }}"
+
+- name: Setup Monitoring
+  hosts: monitoring
+  become: true
+  
+  tasks:
+    - name: Check Prometheus status
+      uri:
+        url: http://localhost:9090/-/healthy
+        method: GET
+        status_code: 200
+      register: prometheus_status
+      ignore_errors: yes
+    
+    - name: Prometheus status
+      debug:
+        msg: "Prometheus is {{ 'running' if prometheus_status.status == 200 else 'not running' }}"
+    
+    - name: Check Grafana status
+      uri:
+        url: http://localhost:3001/login
+        method: GET
+        status_code: 200
+      register: grafana_status
+      ignore_errors: yes
+    
+    - name: Grafana status
+      debug:
+        msg: "Grafana is {{ 'running' if grafana_status.status == 200 else 'not running' }}" 

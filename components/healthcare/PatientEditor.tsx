@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { PatientData, updatePatient } from '../../services/patients';
+import { useState, useEffect } from 'react';
+import { PatientData, updatePatient, generatePatientId } from '../../services/patients';
 import PersonalDetailsForm from '../patients/PersonalDetailsForm';
 import MedicalHistoryForm from '../patients/MedicalHistoryForm';
 import HealthMetricsForm from '../patients/HealthMetricsForm';
@@ -18,6 +18,28 @@ export default function PatientEditor({ patient, onClose, onSave }: PatientEdito
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  
+  // Generate patient ID for new patients
+  useEffect(() => {
+    const fetchPatientId = async () => {
+      // Only generate a new ID if this is a new patient (no ID yet)
+      if (!patient.id && !patient.patient_id) {
+        try {
+          // Generate a new patient ID
+          const newPatientId = await generatePatientId();
+          // Update the patient data with the new ID
+          setUpdatedPatient(prev => ({
+            ...prev,
+            patient_id: newPatientId
+          }));
+        } catch (error) {
+          console.error('Error generating patient ID:', error);
+        }
+      }
+    };
+    
+    fetchPatientId();
+  }, [patient]);
 
   const handleUpdate = (partialPatient: Partial<PatientData>) => {
     setUpdatedPatient(prev => ({
@@ -30,15 +52,32 @@ export default function PatientEditor({ patient, onClose, onSave }: PatientEdito
     setIsSaving(true);
     setSaveError(null);
     try {
+      // Ensure patient has a patient_id
+      if (!updatedPatient.patient_id) {
+        // Generate one last time if missing
+        const newPatientId = await generatePatientId();
+        updatedPatient.patient_id = newPatientId;
+      }
+      
       const result = await updatePatient(updatedPatient);
-      if (result.success) {
+      // Check if the result is a success response (not a PatientData object)
+      if (result && typeof result === 'object' && 'success' in result && result.success) {
         setSaveSuccess('Patient information updated successfully');
         onSave(updatedPatient);
         setTimeout(() => {
           setSaveSuccess(null);
         }, 3000);
       } else {
-        setSaveError('Failed to update patient information');
+        // If it's a PatientData object, that's a success too
+        if (result && typeof result === 'object' && 'id' in result) {
+          setSaveSuccess('Patient information updated successfully');
+          onSave(result as PatientData);
+          setTimeout(() => {
+            setSaveSuccess(null);
+          }, 3000);
+        } else {
+          setSaveError('Failed to update patient information');
+        }
       }
     } catch (error) {
       console.error('Error saving patient:', error);
@@ -74,6 +113,13 @@ export default function PatientEditor({ patient, onClose, onSave }: PatientEdito
       {saveError && (
         <div className="mx-6 mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
           {saveError}
+        </div>
+      )}
+
+      {/* Display patient ID if available */}
+      {updatedPatient.patient_id && (
+        <div className="mx-6 mt-4 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded">
+          <span className="font-medium">Patient ID:</span> {updatedPatient.patient_id}
         </div>
       )}
 
